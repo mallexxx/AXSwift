@@ -2,18 +2,16 @@
 //  AXSwift.h
 //  AXSwift
 //
-//  Created by Tyler Mandry on 10/18/15.
-//  Copyright © 2015 Tyler Mandry. All rights reserved.
+//  Created by ALEKSEY MARTEMYANOV on 15.03.17.
+//  Copyright © 2017 Sympli. All rights reserved.
 //
 
 #import <Cocoa/Cocoa.h>
+#import "AXUIElement+GetWindow.h"
 
 //! Project version number for AXSwift.
 FOUNDATION_EXPORT double AXSwiftVersionNumber;
 
 //! Project version string for AXSwift.
 FOUNDATION_EXPORT const unsigned char AXSwiftVersionString[];
-
-// In this header, you should import all the public headers of your framework using statements like #import <AXSwift/PublicHeader.h>
-
 

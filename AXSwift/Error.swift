@@ -1,53 +1,103 @@
-extension AXError: ErrorType { }
-
 // For some reason values don't get described in this enum, so we have to do it manually.
-extension AXError: CustomStringConvertible {
-  private var valueAsString: String {
-    switch (self) {
-    case Success:
-      return "Success"
-    case Failure:
-      return "Failure"
-    case IllegalArgument:
-      return "IllegalArgument"
-    case InvalidUIElement:
-      return "InvalidUIElement"
-    case InvalidUIElementObserver:
-      return "InvalidUIElementObserver"
-    case CannotComplete:
-      return "CannotComplete"
-    case AttributeUnsupported:
-      return "AttributeUnsupported"
-    case ActionUnsupported:
-      return "ActionUnsupported"
-    case NotificationUnsupported:
-      return "NotificationUnsupported"
-    case NotImplemented:
-      return "NotImplemented"
-    case NotificationAlreadyRegistered:
-      return "NotificationAlreadyRegistered"
-    case NotificationNotRegistered:
-      return "NotificationNotRegistered"
-    case APIDisabled:
-      return "APIDisabled"
-    case NoValue:
-      return "NoValue"
-    case ParameterizedAttributeUnsupported:
-      return "ParameterizedAttributeUnsupported"
-    case NotEnoughPrecision:
-      return "NotEnoughPrecision"
+
+public enum AXUIError: String, Error {
+    case success
+    case failure
+    case illegalArgument
+    case invalidUIElement
+    case invalidUIElementObserver
+    case cannotComplete
+    case attributeUnsupported
+    case actionUnsupported
+    case notificationUnsupported
+    case notImplemented
+    case notificationAlreadyRegistered
+    case notificationNotRegistered
+    case apiDisabled
+    case noValue
+    case parameterizedAttributeUnsupported
+    case notEnoughPrecision
+
+    init(_ error: AXError) {
+        #if swift(>=3)
+            switch (error) {
+            case .success:
+                self = .success
+            case .failure:
+                self = .failure
+            case .illegalArgument:
+                self = .illegalArgument
+            case .invalidUIElement:
+                self = .invalidUIElement
+            case .invalidUIElementObserver:
+                self = .invalidUIElementObserver
+            case .cannotComplete:
+                self = .cannotComplete
+            case .attributeUnsupported:
+                self = .attributeUnsupported
+            case .actionUnsupported:
+                self = .actionUnsupported
+            case .notificationUnsupported:
+                self = .notificationUnsupported
+            case .notImplemented:
+                self = .notImplemented
+            case .notificationAlreadyRegistered:
+                self = .notificationAlreadyRegistered
+            case .notificationNotRegistered:
+                self = .notificationNotRegistered
+            case .apiDisabled:
+                self = .apiDisabled
+            case .noValue:
+                self = .noValue
+            case .parameterizedAttributeUnsupported:
+                self = .parameterizedAttributeUnsupported
+            case .notEnoughPrecision:
+                self = .notEnoughPrecision
+            }
+        #else
+            switch (error) {
+            case .Success:
+                self = .success
+            case .Failure:
+                self = .failure
+            case .IllegalArgument:
+                self = .illegalArgument
+            case .InvalidUIElement:
+                self = .invalidUIElement
+            case .InvalidUIElementObserver:
+                self = .invalidUIElementObserver
+            case .CannotComplete:
+                self = .cannotComplete
+            case .AttributeUnsupported:
+                self = .attributeUnsupported
+            case .ActionUnsupported:
+                self = .actionUnsupported
+            case .NotificationUnsupported:
+                self = .notificationUnsupported
+            case .NotImplemented:
+                self = .notImplemented
+            case .NotificationAlreadyRegistered:
+                self = .notificationAlreadyRegistered
+            case .NotificationNotRegistered:
+                self = .notificationNotRegistered
+            case .APIDisabled:
+                self = .apiDisabled
+            case .NoValue:
+                self = .noValue
+            case .ParameterizedAttributeUnsupported:
+                self = .parameterizedAttributeUnsupported
+            case .NotEnoughPrecision:
+                self = .notEnoughPrecision
+            }
+        #endif
     }
-  }
-
-  public var description: String {
-    return "AXError.\(valueAsString)"
-  }
+    
+    private var valueAsString: String {
+        return self.rawValue
+    }
+    
+    public var description: String {
+        return "AXError.\(valueAsString)"
+    }
+    
 }
-
-/// All possible errors that could be returned from UIElement or one of its subclasses.
-///
-/// These are just the errors that can be returned from the underlying API.
-///
-/// - seeAlso: [AXUIElement.h Reference](https://developer.apple.com/library/mac/documentation/ApplicationServices/Reference/AXUIElement_header_reference/)
-/// - seeAlso: `UIElement` for a list of errors that you should handle
-public typealias Error = AXError

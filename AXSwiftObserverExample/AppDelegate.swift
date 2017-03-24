@@ -3,35 +3,35 @@ import AXSwift
 
 class AppDelegate: NSObject, NSApplicationDelegate {
 
-  var observer: Observer!
+  var observer: AXUIObserver?
 
   func applicationDidFinishLaunching(aNotification: NSNotification) {
-    let app = Application.allForBundleID("com.apple.finder").first!
+    let app = AXApplication.all(for: "com.apple.finder").first!
 
     do {
-      try startWatcher(app)
+      try startWatcher(app: app)
     } catch let error {
       NSLog("Error: Could not watch app [\(app)]: \(error)")
       abort()
     }
   }
 
-  func startWatcher(app: Application) throws {
+  func startWatcher(app: AXApplication) throws {
     var updated = false
-    observer = app.createObserver() { (observer: Observer, element: UIElement, event: Notification, info: [String: AnyObject]?) in
+    observer = app.createObserver() { (observer: AXUIObserver, element: UIElement, event: AXNotification, info: [String: AnyObject]?) in
       var elementDesc: String!
-      if let role = try? element.role()! where role == .Window {
-        elementDesc = "\(element) \"\(try! (element.attribute(.Title) as String?)!)\""
+      if let role = try? element.role()!, role == .window {
+        elementDesc = "\(element) \"\(try! (element.get(attribute: .title) as? String)!)\""
       } else {
         elementDesc = "\(element)"
       }
       print("\(event) on \(elementDesc); info: \(info)")
 
       // Watch events on new windows
-      if event == .WindowCreated {
+      if event == .windowCreated {
         do {
-          try observer.addNotification(.UIElementDestroyed, forElement: element)
-          try observer.addNotification(.Moved, forElement: element)
+          try observer.add(notification: .uiElementDestroyed, for: element)
+          try observer.add(notification: .moved, for: element)
         } catch let error {
           NSLog("Error: Could not watch [\(element)]: \(error)")
         }
@@ -41,15 +41,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       if !updated {
         updated = true
         // Set this code to run after the current run loop, which is dispatching all notifications.
-        dispatch_async(dispatch_get_main_queue()) {
+        DispatchQueue.main.async {
           print("---")
           updated = false
         }
       }
     }
 
-    try observer.addNotification(.WindowCreated, forElement: app)
-    try observer.addNotification(.MainWindowChanged, forElement: app)
+    try observer!.add(notification: .windowCreated, for: app)
+    try observer!.add(notification: .mainWindowChanged, for: app)
   }
 
   func applicationWillTerminate(aNotification: NSNotification) {

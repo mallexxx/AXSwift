@@ -21,6 +21,9 @@
 		2F86CEBB1BD56250007E8C29 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F86CEBA1BD56250007E8C29 /* main.swift */; };
 		2F86CEFC1BD7086F007E8C29 /* AXSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F32C6841BD42D5000AD4419 /* AXSwift.framework */; };
 		2F86CF001BD70B70007E8C29 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F86CEFF1BD70B70007E8C29 /* Constants.swift */; };
+		B6FDB6211E8550E300D81698 /* AXUIElement+GetWindow.h in Headers */ = {isa = PBXBuildFile; fileRef = B6FDB61E1E8550E300D81698 /* AXUIElement+GetWindow.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		B6FDB6221E8550E300D81698 /* UIElement+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FDB61F1E8550E300D81698 /* UIElement+Extensions.swift */; };
+		B6FDB6231E8550E300D81698 /* UIElement+GetWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FDB6201E8550E300D81698 /* UIElement+GetWindow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,6 +57,9 @@
 		2F86CEBA1BD56250007E8C29 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		2F86CEE01BD6B33C007E8C29 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2F86CEFF1BD70B70007E8C29 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		B6FDB61E1E8550E300D81698 /* AXUIElement+GetWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "AXUIElement+GetWindow.h"; sourceTree = "<group>"; };
+		B6FDB61F1E8550E300D81698 /* UIElement+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIElement+Extensions.swift"; sourceTree = "<group>"; };
+		B6FDB6201E8550E300D81698 /* UIElement+GetWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIElement+GetWindow.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +120,9 @@
 				2F1AEB941BD43741005BA6FC /* Application.swift */,
 				2F32C6911BD4342700AD4419 /* Error.swift */,
 				2F86CEFF1BD70B70007E8C29 /* Constants.swift */,
+				B6FDB61E1E8550E300D81698 /* AXUIElement+GetWindow.h */,
+				B6FDB61F1E8550E300D81698 /* UIElement+Extensions.swift */,
+				B6FDB6201E8550E300D81698 /* UIElement+GetWindow.swift */,
 			);
 			path = AXSwift;
 			sourceTree = "<group>";
@@ -148,6 +157,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2F32C6881BD42D5000AD4419 /* AXSwift.h in Headers */,
+				B6FDB6211E8550E300D81698 /* AXUIElement+GetWindow.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -214,7 +224,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0710;
-				LastUpgradeCheck = 0700;
+				LastUpgradeCheck = 0820;
 				ORGANIZATIONNAME = "Tyler Mandry";
 				TargetAttributes = {
 					2F32C6831BD42D5000AD4419 = {
@@ -281,10 +291,12 @@
 			files = (
 				2F1AEB951BD43741005BA6FC /* Application.swift in Sources */,
 				2F86CF001BD70B70007E8C29 /* Constants.swift in Sources */,
+				B6FDB6221E8550E300D81698 /* UIElement+Extensions.swift in Sources */,
 				2F86CEA81BD4A0B9007E8C29 /* Observer.swift in Sources */,
 				2F32C6921BD4342700AD4419 /* Error.swift in Sources */,
 				2F1AEB971BD43768005BA6FC /* SystemWideElement.swift in Sources */,
 				2F32C6901BD42FE700AD4419 /* UIElement.swift in Sources */,
+				B6FDB6231E8550E300D81698 /* UIElement+GetWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,8 +342,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
@@ -376,8 +390,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
@@ -396,6 +412,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -414,10 +431,12 @@
 				INFOPLIST_FILE = AXSwift/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tylermandry.AXSwift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -434,9 +453,11 @@
 				INFOPLIST_FILE = AXSwift/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tylermandry.AXSwift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -448,8 +469,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = AXSwiftExample/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tylermandry.AXSwiftExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -461,8 +484,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = AXSwiftExample/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tylermandry.AXSwiftExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -474,8 +499,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = AXSwiftObserverExample/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tylermandry.AXSwiftObserverExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -487,8 +514,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = AXSwiftObserverExample/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tylermandry.AXSwiftObserverExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};

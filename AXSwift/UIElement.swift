@@ -34,6 +34,22 @@
 /// Any undocumented errors thrown are bugs and should be reported.
 ///
 /// - seeAlso: [AXUIElement.h reference](https://developer.apple.com/library/mac/documentation/ApplicationServices/Reference/AXUIElement_header_reference/)
+#if swift(>=3)
+extension AXValue {
+    func takeRetainedValue() -> AXValue {
+        return self
+    }
+}
+#else
+    extension AXValueType {
+        @nonobjc static let cgRect = AXValueType.CGRect
+        @nonobjc static let cfRange = AXValueType.CFRange
+        @nonobjc static let cgSize = AXValueType.CGSize
+        @nonobjc static let cgPoint = AXValueType.CGPoint
+        @nonobjc static let illegal = AXValueType.Illegal
+        @nonobjc static let axError = AXValueType.AXError
+    }
+#endif
 public class UIElement {
   public let element: AXUIElement
 
@@ -54,38 +70,38 @@ public class UIElement {
   ///                         happens asynchronously and does not affect the return value.
   public class func isProcessTrusted(withPrompt showPrompt: Bool = false) -> Bool {
     let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: showPrompt as CFBoolean]
-    return AXIsProcessTrustedWithOptions(options)
+    return AXIsProcessTrustedWithOptions(options as CFDictionary?)
   }
 
   /// Timeout in seconds for all UIElement messages. Use this to control how long a method call can
   /// delay execution. The default is `0` which means to use the system default.
-  public class var globalMessagingTimeout: Float {
-    get { return systemWideElement.messagingTimeout }
-    set { systemWideElement.messagingTimeout = newValue }
-  }
+//  public class var globalMessagingTimeout: Float {
+//    get { return systemWideElement.messagingTimeout }
+//    set { systemWideElement.messagingTimeout = newValue }
+//  }
 
   // MARK: - Attributes
 
   /// Returns the list of all attributes.
   ///
   /// Does not include parameterized attributes.
-  public func attributes() throws -> [Attribute] {
+  public func attributes() throws -> [AXAttribute] {
     let attrs = try attributesAsStrings()
-    for attr in attrs where Attribute(rawValue: attr) == nil { print("Unrecognized attribute: \(attr)") }
-    return attrs.flatMap({ Attribute(rawValue: $0) })
+    for attr in attrs where AXAttribute(rawValue: attr) == nil { NSLog("Unrecognized attribute: \(attr)") }
+    return attrs.flatMap({ AXAttribute(rawValue: $0) })
   }
 
   // This version is named differently so the caller doesn't have to specify the return type when
   // using the enum version.
   public func attributesAsStrings() throws -> [String] {
     var names: CFArray?
-    let error = AXUIElementCopyAttributeNames(element, &names)
+    let error = AXUIError(AXUIElementCopyAttributeNames(element, &names))
 
-    if error == .NoValue || error == .AttributeUnsupported {
+    if error == .noValue || error == .attributeUnsupported {
       return []
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -99,24 +115,24 @@ public class UIElement {
   /// which is more convenient than dealing with exceptions (which are used for more serious
   /// errors). However, if you'd like to specifically test an attribute is actually supported, you
   /// can use this method.
-  public func attributeIsSupported(attribute: Attribute) throws -> Bool {
-    return try attributeIsSupported(attribute.rawValue)
+  public func supports(attribute attr: AXAttribute) throws -> Bool {
+    return try supports(attribute: attr.rawValue)
   }
 
-  public func attributeIsSupported(attribute: String) throws -> Bool {
+  public func supports(attribute attr: String) throws -> Bool {
     // Ask to copy 0 values, since we are only interested in the return code.
     var value: CFArray?
-    let error = AXUIElementCopyAttributeValues(element, attribute, 0, 0, &value)
+    let error = AXUIError(AXUIElementCopyAttributeValues(element, attr as CFString, 0, 0, &value))
 
-    if error == .AttributeUnsupported {
+    if error == .attributeUnsupported {
       return false
     }
 
-    if error == .NoValue {
+    if error == .noValue {
       return true
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -124,19 +140,19 @@ public class UIElement {
   }
 
   /// Returns whether `attribute` is writeable.
-  public func attributeIsSettable(attribute: Attribute) throws -> Bool {
-    return try attributeIsSettable(attribute.rawValue)
+  public func isSettable(attribute attr: AXAttribute) throws -> Bool {
+    return try isSettable(attribute: attr.rawValue)
   }
 
-  public func attributeIsSettable(attribute: String) throws -> Bool {
+  public func isSettable(attribute attr: String) throws -> Bool {
     var settable: DarwinBoolean = false
-    let error = AXUIElementIsAttributeSettable(element, attribute, &settable)
+    let error = AXUIError(AXUIElementIsAttributeSettable(element, attr as CFString, &settable))
 
-    if error == .NoValue || error == .AttributeUnsupported {
+    if error == .noValue || error == .attributeUnsupported {
       return false
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -152,23 +168,29 @@ public class UIElement {
   ///
   /// - warning: This method force-casts the attribute to the desired type, which will abort if the
   ///            cast fails. If you want to check the return type, ask for Any.
-  public func attribute<T>(attribute: Attribute) throws -> T? {
-    return try self.attribute(attribute.rawValue)
+  public func get(attribute attr: AXAttribute) throws -> Any? {
+    return try self.get(attribute: attr.rawValue)
   }
 
-  public func attribute<T>(attribute: String) throws -> T? {
+  public func get(attribute attr: String) throws -> Any? {
     var value: AnyObject?
-    let error = AXUIElementCopyAttributeValue(element, attribute, &value)
+    
+    AXUIElementSetMessagingTimeout(element, 1.5)
+    defer {
+        AXUIElementSetMessagingTimeout(element, 0)
+    }
+    
+    let error = AXUIError(AXUIElementCopyAttributeValue(element, attr as CFString, &value))
 
-    if error == .NoValue || error == .AttributeUnsupported {
+    if error == .noValue || error == .attributeUnsupported {
       return nil
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
-    return (unpackAXValue(value!) as! T)
+    return unpack(axValue: value!)
   }
 
   /// Sets the value of `attribute` to `value`.
@@ -179,14 +201,14 @@ public class UIElement {
   ///   - `Error.AttributeUnsupported`: `attribute` isn't supported.
   ///   - `Error.IllegalArgument`: `value` is an illegal value.
   ///   - `Error.Failure`: A temporary failure occurred.
-  public func setAttribute(attribute: Attribute, value: Any) throws {
-    try self.setAttribute(attribute.rawValue, value: value)
+  public func set(value val: Any, for attribute: AXAttribute) throws {
+    try self.set(value: val, for: attribute.rawValue)
   }
 
-  public func setAttribute(attribute: String, value: Any) throws {
-    let error = AXUIElementSetAttributeValue(element, attribute, packAXValue(value))
+  public func set(value val: Any, for attribute: String) throws {
+    let error = AXUIError(AXUIElementSetAttributeValue(element, attribute as CFString, pack(axValue: val) as CFTypeRef))
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
   }
@@ -203,30 +225,30 @@ public class UIElement {
   ///
   /// - note: Presumably you would use this API for performance, though it's not explicitly
   ///         documented by Apple that there is actually a difference.
-  public func getMultipleAttributes(names: Attribute...) throws -> [Attribute: Any] {
-    return try getMultipleAttributes(names)
+  public func get(names attrnames: AXAttribute...) throws -> [AXAttribute: Any] {
+    return try get(attributes: attrnames)
   }
 
-  public func getMultipleAttributes(attributes: [Attribute]) throws -> [Attribute: Any] {
-    let values = try fetchMultiAttrValues(attributes.map({ $0.rawValue }))
-    return try packMultiAttrValues(attributes, values: values)
+  public func get(attributes attrs: [AXAttribute]) throws -> [AXAttribute: Any] {
+    let values = try fetch(attributes: attrs.map({ $0.rawValue }))
+    return try pack(attributes: attrs, values: values)
   }
 
-  public func getMultipleAttributes(attributes: [String]) throws -> [String: Any] {
-    let values = try fetchMultiAttrValues(attributes)
-    return try packMultiAttrValues(attributes, values: values)
+  public func get(attributes attrs: [String]) throws -> [String: Any] {
+    let values = try fetch(attributes: attrs)
+    return try pack(attributes: attrs, values: values)
   }
 
   // Helper: Gets list of values
-  private func fetchMultiAttrValues(attributes: [String]) throws -> [AnyObject] {
+  private func fetch(attributes attrs: [String]) throws -> [AnyObject] {
     var valuesCF: CFArray?
-    let error = AXUIElementCopyMultipleAttributeValues(
+    let error = AXUIError(AXUIElementCopyMultipleAttributeValues(
       element,
-      attributes,
+      attrs as CFArray,
       AXCopyMultipleAttributeOptions(rawValue: 0),  // keep going on errors (particularly NoValue)
-      &valuesCF)
+      &valuesCF))
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -234,31 +256,31 @@ public class UIElement {
   }
 
   // Helper: Packs names, values into dictionary
-  private func packMultiAttrValues<Attr>(attributes: [Attr], values: [AnyObject]) throws -> [Attr: Any] {
+  private func pack<Attr>(attributes attrs: [Attr], values: [AnyObject]) throws -> [Attr: Any] {
     var result = [Attr: Any]()
-    for (index, attribute) in attributes.enumerate() {
-      if try checkMultiAttrValue(values[index]) {
-        result[attribute] = unpackAXValue(values[index])
+    for (index, attribute) in attrs.enumerated() {
+      if try checkMultiAttrValue(value: values[index]) {
+        result[attribute] = unpack(axValue: values[index])
       }
     }
     return result
   }
 
   // Helper: Checks if value is present and not an error (throws on nontrivial errors).
-  private func checkMultiAttrValue(value: AnyObject) throws -> Bool {
+  private func checkMultiAttrValue(value val: AnyObject) throws -> Bool {
     // Check for null
-    if value is NSNull {
+    if val is NSNull {
       return false
     }
 
     // Check for error
-    if CFGetTypeID(value) == AXValueGetTypeID() &&
-       AXValueGetType(value as! AXValue).rawValue == kAXValueAXErrorType {
-      var error: AXError = AXError.Success;
-      AXValueGetValue(value as! AXValue, AXValueType(rawValue: kAXValueAXErrorType)!, &error)
-
-      assert(error != .Success)
-      if error == .NoValue || error == .AttributeUnsupported {
+    if CFGetTypeID(val) == AXValueGetTypeID() &&
+       AXValueGetType(val as! AXValue).rawValue == kAXValueAXErrorType {
+      var axError: AXError?
+      AXValueGetValue(val as! AXValue, AXValueType(rawValue: kAXValueAXErrorType)!, &axError)
+      let error = axError != nil ? AXUIError(axError!) : .noValue
+        
+      if error == .noValue || error == .attributeUnsupported {
         return false
       } else {
         throw error
@@ -266,28 +288,6 @@ public class UIElement {
     }
 
     return true
-  }
-
-  // MARK: Array attributes
-
-  /// Returns all the values of the attribute as an array of the given type.
-  ///
-  /// - parameter attribute: The name of the array attribute.
-  ///
-  /// - throws: `Error.IllegalArgument` if the attribute isn't an array.
-  public func arrayAttribute<T>(attribute: Attribute) throws -> [T]? {
-    return try self.arrayAttribute(attribute.rawValue)
-  }
-
-  public func arrayAttribute<T>(attribute: String) throws -> [T]? {
-    guard let value: Any = try self.attribute(attribute) else {
-      return nil
-    }
-    guard let array = value as? [AnyObject] else {
-      // For consistency with the other array attribute APIs, throw if it's not an array.
-      throw Error.IllegalArgument
-    }
-    return array.map({ unpackAXValue($0) as! T })
   }
 
   /// Returns a subset of values from an array attribute.
@@ -301,43 +301,43 @@ public class UIElement {
   ///   - `nil` if the attribute doesn't exist or has no value.
   ///
   /// - throws: `Error.IllegalArgument` if the attribute isn't an array.
-  public func valuesForAttribute<T: AnyObject>
-      (attribute: Attribute, startAtIndex index: Int, maxValues: Int) throws -> [T]? {
-    return try valuesForAttribute(attribute.rawValue, startAtIndex: index, maxValues: maxValues)
+  public func values<T: AnyObject>
+      (for attribute: AXAttribute, startAtIndex index: Int, maxValues: Int) throws -> [T]? {
+    return try values(for: attribute.rawValue, startAtIndex: index, maxValues: maxValues)
   }
 
-  public func valuesForAttribute<T: AnyObject>
-      (attribute: String, startAtIndex index: Int, maxValues: Int) throws -> [T]? {
+  public func values<T: AnyObject>
+      (for attribute: String, startAtIndex index: Int, maxValues: Int) throws -> [T]? {
     var values: CFArray?
-    let error = AXUIElementCopyAttributeValues(element, attribute, index, maxValues, &values)
+    let error = AXUIError(AXUIElementCopyAttributeValues(element, attribute as CFString, index, maxValues, &values))
 
-    if error == .NoValue || error == .AttributeUnsupported {
+    if error == .noValue || error == .attributeUnsupported {
       return nil
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
     let array = values! as [AnyObject]
-    return array.map({ unpackAXValue($0) as! T })
+    return array.map({ unpack(axValue: $0) as! T })
   }
 
   /// Returns the number of values an array attribute has.
   /// - returns: The number of values, or `nil` if `attribute` isn't an array (or doesn't exist).
-  public func valueCountForAttribute(attribute: Attribute) throws -> Int? {
-    return try valueCountForAttribute(attribute.rawValue)
+  public func valueCount(for attribute: AXAttribute) throws -> Int? {
+    return try valueCount(for: attribute.rawValue)
   }
 
-  public func valueCountForAttribute(attribute: String) throws -> Int? {
+  public func valueCount(for attribute: String) throws -> Int? {
     var count: Int = 0
-    let error = AXUIElementGetAttributeValueCount(element, attribute, &count)
+    let error = AXUIError(AXUIElementGetAttributeValueCount(element, attribute as CFString, &count))
 
-    if error == .AttributeUnsupported || error == .IllegalArgument {
+    if error == .attributeUnsupported || error == .illegalArgument {
       return nil
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -350,19 +350,19 @@ public class UIElement {
   ///
   /// Parameterized attributes are attributes that require parameters to retrieve. For example,
   /// the cell contents of a spreadsheet might require the row and column of the cell you want.
-  public func parameterizedAttributes() throws -> [Attribute] {
-    return try parameterizedAttributesAsStrings().flatMap({ Attribute(rawValue: $0) })
+  public func parameterizedAttributes() throws -> [AXAttribute] {
+    return try parameterizedAttributesAsStrings().flatMap({ AXAttribute(rawValue: $0) })
   }
 
   public func parameterizedAttributesAsStrings() throws -> [String] {
     var names: CFArray?
-    let error = AXUIElementCopyParameterizedAttributeNames(element, &names)
+    let error = AXUIError(AXUIElementCopyParameterizedAttributeNames(element, &names))
 
-    if error == .NoValue || error == .AttributeUnsupported {
+    if error == .noValue || error == .attributeUnsupported {
       return []
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -375,75 +375,84 @@ public class UIElement {
   /// The expected type of `param` depends on the attribute. See the
   /// [NSAccessibility Informal Protocol Reference](https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Protocols/NSAccessibility_Protocol/)
   /// for more info.
-  public func parameterizedAttribute<T, U>(attribute: Attribute, param: U) throws -> T? {
+  public func parameterizedAttribute(_ attribute: AXAttribute, param: Any) throws -> Any? {
     return try parameterizedAttribute(attribute.rawValue, param: param)
   }
 
-  public func parameterizedAttribute<T, U>(attribute: String, param: U) throws -> T? {
+  public func parameterizedAttribute(_ attribute: String, param: Any) throws -> Any? {
     var value: AnyObject?
-    let error = AXUIElementCopyParameterizedAttributeValue(element, attribute, param as! AnyObject, &value)
+    let error = AXUIError(AXUIElementCopyParameterizedAttributeValue(element, attribute as CFString, pack(axValue: param) as CFTypeRef, &value))
 
-    if error == .NoValue || error == .AttributeUnsupported {
+    if error == .noValue || error == .attributeUnsupported {
       return nil
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
-    return (unpackAXValue(value!) as! T)
+    return unpack(axValue: value!)
   }
 
   // MARK: Attribute helpers
 
   // Checks if the value is an AXValue and if so, unwraps it.
   // If the value is an AXUIElement, wraps it in UIElement.
-  private func unpackAXValue(value: AnyObject) -> Any {
+  private func unpack(axValue value: AnyObject) -> Any {
     switch CFGetTypeID(value) {
     case AXUIElementGetTypeID():
       return UIElement(value as! AXUIElement)
     case AXValueGetTypeID():
       let type = AXValueGetType(value as! AXValue)
-      switch type {
-      case .AXError:
-        var result: AXError = .Success
+      
+      if type == .axError {
+        var result: AXError!
         let success = AXValueGetValue(value as! AXValue, type, &result)
         assert(success)
-        return result
-      case .CFRange:
+        return AXUIError(result)
+        
+      } else if type == .cfRange {
         var result: CFRange = CFRange()
         let success = AXValueGetValue(value as! AXValue, type, &result)
         assert(success)
         return result
-      case .CGPoint:
-        var result: CGPoint = CGPointZero
+        
+      } else if type == .cgPoint {
+        var result: CGPoint = CGPoint.zero
         let success = AXValueGetValue(value as! AXValue, type, &result)
         assert(success)
         return result
-      case .CGRect:
-        var result: CGRect = CGRectZero
+        
+      } else if type == .cgRect {
+        var result: CGRect = CGRect.zero
         let success = AXValueGetValue(value as! AXValue, type, &result)
         assert(success)
         return result
-      case .CGSize:
-        var result: CGSize = CGSizeZero
+        
+      } else if type == .cgSize {
+        var result: CGSize = CGSize.zero
         let success = AXValueGetValue(value as! AXValue, type, &result)
         assert(success)
         return result
-      case .Illegal:
+      } else {
         return value
       }
     default:
+      if let array = value as? [AXUIElement] {
+        return array.map{ UIElement($0) }
+      }
       return value
     }
   }
 
   // Checks if the value is one supported by AXValue and if so, wraps it.
   // If the value is a UIElement, unwraps it to an AXUIElement.
-  private func packAXValue(value: Any) -> AnyObject {
+  private func pack(axValue value: Any) -> Any {
     switch value {
     case let val as UIElement:
       return val.element
+    case let val as [UIElement]:
+      return val.map{ $0.element }
     case var val as CFRange:
       return AXValueCreate(AXValueType(rawValue: kAXValueCFRangeType)!, &val)!.takeRetainedValue()
     case var val as CGPoint:
@@ -453,26 +462,26 @@ public class UIElement {
     case var val as CGSize:
       return AXValueCreate(AXValueType(rawValue: kAXValueCGSizeType)!, &val)!.takeRetainedValue()
     default:
-      return value as! AnyObject  // must be an object to pass to AX
+      return value  // must be an object to pass to AX
     }
   }
 
   // MARK: - Actions
 
   /// Returns a list of actions that can be performed on the element.
-  public func actions() throws -> [Action] {
-    return try actionsAsStrings().flatMap({ Action(rawValue: $0) })
+  public func actions() throws -> [AXAction] {
+    return try actionsAsStrings().flatMap({ AXAction(rawValue: $0) })
   }
 
   public func actionsAsStrings() throws -> [String] {
     var names: CFArray?
-    let error = AXUIElementCopyActionNames(element, &names)
+    let error = AXUIError(AXUIElementCopyActionNames(element, &names))
 
-    if error == .NoValue || error == .AttributeUnsupported {
+    if error == .noValue || error == .attributeUnsupported {
       return []
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -481,19 +490,19 @@ public class UIElement {
   }
 
   /// Returns the human-readable description of `action`.
-  public func actionDescription(action: Action) throws -> String? {
-    return try actionDescription(action.rawValue)
+  public func description(for action: AXAction) throws -> String? {
+    return try description(for: action.rawValue)
   }
 
-  public func actionDescription(action: String) throws -> String? {
+  public func description(for action: String) throws -> String? {
     var description: CFString?
-    let error = AXUIElementCopyActionDescription(element, action, &description)
+    let error = AXUIError(AXUIElementCopyActionDescription(element, action as CFString, &description))
 
-    if error == .NoValue || error == .ActionUnsupported {
+    if error == .noValue || error == .actionUnsupported {
       return nil
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -505,14 +514,14 @@ public class UIElement {
   /// - note: If the action times out, it might mean that the application is taking a long time to
   ///         actually perform the action. It doesn't necessarily mean that the action wasn't performed.
   /// - throws: `Error.ActionUnsupported` if the action is not supported.
-  public func performAction(action: Action) throws {
-    try performAction(action.rawValue)
+  public func perform(_ action: AXAction) throws {
+    try perform(action.rawValue)
   }
 
-  public func performAction(action: String) throws {
-    let error = AXUIElementPerformAction(element, action)
+  public func perform(_ action: String) throws {
+    let error = AXUIError(AXUIElementPerformAction(element, action as CFString))
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
   }
@@ -524,9 +533,9 @@ public class UIElement {
   /// Throws only if the element is invalid (`Errors.InvalidUIElement`).
   public func pid() throws -> pid_t {
     var pid: pid_t = -1
-    let error = AXUIElementGetPid(element, &pid)
+    let error = AXUIError(AXUIElementGetPid(element, &pid))
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
@@ -541,11 +550,11 @@ public class UIElement {
   public var messagingTimeout: Float = 0 {
     didSet {
       messagingTimeout = max(messagingTimeout, 0)
-      let error = AXUIElementSetMessagingTimeout(element, messagingTimeout)
+      let error = AXUIError(AXUIElementSetMessagingTimeout(element, messagingTimeout))
 
       // InvalidUIElement errors are only relevant when actually passing messages, so we can ignore
       // them here.
-      guard error == .Success || error == .InvalidUIElement else {
+      guard error == .success || error == .invalidUIElement else {
         fatalError("Unexpected error setting messaging timeout: \(error)")
       }
     }
@@ -553,24 +562,20 @@ public class UIElement {
 
   // Gets the element at the specified coordinates.
   // This can only be called on applications and the system-wide element, so it is internal here.
-  func elementAtPosition(x: Float, _ y: Float) throws -> UIElement? {
+  func element(at point: CGPoint) throws -> UIElement? {
     var result: AXUIElement?
-    let error = AXUIElementCopyElementAtPosition(element, x, y, &result)
+    let error = AXUIError(AXUIElementCopyElementAtPosition(element, Float(point.x), Float(point.y), &result))
 
-    if error == .NoValue {
+    if error == .noValue {
       return nil
     }
 
-    guard error == .Success else {
+    guard error == .success else {
       throw error
     }
 
     return UIElement(result!)
   }
-
-  // TODO: convenience functions for attributes
-  // TODO: get any attribute as a UIElement or [UIElement] (or a subclass)
-  // TODO: promoters
 }
 
 // MARK: - CustomStringConvertible
@@ -584,29 +589,28 @@ extension UIElement: CustomStringConvertible {
       let role = try self.role()
       roleString = role?.rawValue ?? "UIElementNoRole"
 
-      switch role {
-      case .Some(.Application):
-        description = pid.flatMap{NSRunningApplication(processIdentifier: $0)}.flatMap{$0.bundleIdentifier} ?? ""
-      case .Some(.Window):
-        description = (try? self.attribute(.Title) ?? "") ?? ""
-      default:
-        break
+      if role == .application {
+        description = pid.flatMap{NSRunningApplication.init(processIdentifier: $0)}.flatMap{$0.bundleIdentifier} ?? ""
+      } else if role == .window {
+        description = (try? self.get(attribute: .title) as? String ?? "") ?? ""
       }
-    } catch AXError.InvalidUIElement {
-      roleString = "InvalidUIElement"
-    } catch {
-      roleString = "UnknownUIElement"
+    } catch (let error) {
+        if let error = error as? AXError , AXUIError(error) == .invalidUIElement {
+          roleString = "InvalidUIElement"
+        } else {
+          roleString = "UnknownUIElement"
+        }
     }
 
     let pidString = (pid == nil) ? "??" : String(pid!)
-    return "<\(roleString) \"\(description ?? String(element))\" (pid=\(pidString))>"
+    return "<\(roleString) \"\(description ?? String(describing: element))\" (pid=\(pidString))>"
   }
 
   public var inspect: String {
     guard let attributeNames = try? attributes() else {
       return "InvalidUIElement"
     }
-    guard let attributes = try? getMultipleAttributes(attributeNames) else {
+    guard let attributes = try? get(attributes: attributeNames) else {
       return "InvalidUIElement"
     }
     return "\(attributes)"
@@ -629,19 +633,19 @@ extension UIElement {
   /// initializing.
   ///
   /// - seeAlso: [Roles](https://developer.apple.com/library/mac/documentation/AppKit/Reference/NSAccessibility_Protocol_Reference/index.html#//apple_ref/doc/constant_group/Roles)
-  public func role() throws -> Role? {
+  public func role() throws -> AXRole? {
     // should this be non-optional?
-    if let str: String = try self.attribute(.Role) {
-      return Role(rawValue: str)
+    if let str = try self.get(attribute: .role) as? String {
+      return AXRole(rawValue: str)
     } else {
       return nil
     }
   }
 
   /// - seeAlso: [Subroles](https://developer.apple.com/library/mac/documentation/AppKit/Reference/NSAccessibility_Protocol_Reference/index.html#//apple_ref/doc/constant_group/Subroles)
-  public func subrole() throws -> Subrole? {
-    if let str: String = try self.attribute(.Subrole) {
-      return Subrole(rawValue: str)
+  public func subrole() throws -> AXSubrole? {
+    if let str = try self.get(attribute: .subrole) as? String {
+      return AXSubrole(rawValue: str)
     } else {
       return nil
     }

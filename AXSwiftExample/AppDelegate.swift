@@ -6,41 +6,41 @@ class ApplicationDelegate: NSObject, NSApplicationDelegate {
     // Check that we have permission
     guard UIElement.isProcessTrusted(withPrompt: true) else {
       NSLog("No accessibility API permission, exiting")
-      NSRunningApplication.currentApplication().terminate()
+      NSRunningApplication.current().terminate()
       return
     }
 
     // Get Active Application
-    if let application = NSWorkspace.sharedWorkspace().frontmostApplication {
+    if let application = NSWorkspace.shared().frontmostApplication {
       NSLog("localizedName: \(application.localizedName), processIdentifier: \(application.processIdentifier)")
-      let uiApp = Application(application)!
+      let uiApp = AXApplication(application)!
       NSLog("windows: \(try! uiApp.windows())")
       NSLog("attributes: \(try! uiApp.attributes())")
-      NSLog("at 0,0: \(try! uiApp.elementAtPosition(0,0))")
+        NSLog("at 0,0: \(try! uiApp.element(at: CGPoint(x: 0, y: 0)))")
       if let bundleIdentifier = application.bundleIdentifier {
         NSLog("bundleIdentifier: \(bundleIdentifier)")
-        let windows = try! Application.allForBundleID(bundleIdentifier).first!.windows()
+        let windows = try! AXApplication.all(for: bundleIdentifier).first!.windows()
         NSLog("windows: \(windows)")
       }
     }
 
     // Get Application by bundleIdentifier
-    let app = Application.allForBundleID("com.apple.finder").first!
+    let app = AXApplication.all(for: "com.apple.finder").first!
     NSLog("finder: \(app)")
     NSLog("role: \(try! app.role()!)")
     NSLog("windows: \(try! app.windows()!)")
     NSLog("attributes: \(try! app.attributes())")
-    if let title: String = try! app.attribute(.Title) {
+    if let title = try! app.get(attribute: .title) as? String {
       NSLog("title: \(title)")
     }
-    NSLog("multi: \(try! app.getMultipleAttributes(["AXRole", "asdf", "AXTitle"]))")
-    NSLog("multi: \(try! app.getMultipleAttributes(.Role, .Title))")
+    NSLog("multi: \(try! app.get(attributes: ["AXRole", "asdf", "AXTitle"]))")
+    NSLog("multi: \(try! app.get(attributes: [.role, .title]))")
 
     // Try to set an unsettable attribute
     if let window = try! app.windows()?.first {
       do {
-        try window.setAttribute(.Title, value: "my title")
-        let newTitle: String = try! window.attribute(.Title)!
+        try window.set(value: "my title", for: .title)
+        let newTitle = try! window.get(attribute: .title) as! String
         NSLog("title set; result = \(newTitle)")
       } catch {
         NSLog("error caught trying to set title of window: \(error)")
@@ -48,10 +48,10 @@ class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     NSLog("system wide:")
-    NSLog("role: \(try! systemWideElement.role()!)")
+    NSLog("role: \(try! SystemWideElement.shared.role()!)")
     // NSLog("windows: \(try! sys.windows())")
-    NSLog("attributes: \(try! systemWideElement.attributes())")
+    NSLog("attributes: \(try! SystemWideElement.shared.attributes())")
 
-    NSRunningApplication.currentApplication().terminate()
+    NSRunningApplication.current().terminate()
   }
 }

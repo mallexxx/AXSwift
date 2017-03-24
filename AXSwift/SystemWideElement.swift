@@ -1,15 +1,20 @@
-/// A singleton for the system-wide element.
-public var systemWideElement = SystemWideElement()
 
 /// A `UIElement` for the system-wide accessibility element, which can be used to retrieve global,
 /// application-inspecific parameters like the currently focused element.
 public class SystemWideElement: UIElement {
+  public static var shared = SystemWideElement()
+    
   private convenience init() {
-    self.init(AXUIElementCreateSystemWide().takeRetainedValue())
+    #if swift(>=3)
+        let element = AXUIElementCreateSystemWide()
+    #else
+        let element = AXUIElementCreateSystemWide().takeRetainedValue()
+    #endif
+    self.init(element)
   }
 
   /// Returns the element at the specified top-down coordinates, or nil if there is none.
-  public override func elementAtPosition(x: Float, _ y: Float) throws -> UIElement? {
-    return try super.elementAtPosition(x, y)
+  public override func element(at point: CGPoint) throws -> UIElement? {
+    return try super.element(at: point)
   }
 }
